@@ -14,8 +14,8 @@ class Monad {
 		Data(E error)
 		: error_(error) {}
 		~Data() {
-			value_.~T();
-			error_.~E();
+			delete value;
+			delete error;
 		}
 	};
 	using M_default = Monad<T, E>;
