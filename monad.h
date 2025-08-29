@@ -72,10 +72,20 @@ public:
 	// monad >>= f1 >>= f2 >>= f3
 	// ```
 	// to apply functions f1, f2, f3 in order to the monad.
-	// Here, we can do the same thing, except by default the >> (bit shift?) operator in C++ is right
-	// associative. This means that the expression `monad >> f1 >> f2` gets interpreted as `monad >>
-	// (f1 >> f2)`. To get around this, we simply define the >> operator on functions f1 and f2 in a
-	// left-associative manner, i.e., (f1 >> f2 >> f3)(m) = f3(f2(f1))(m) = f3(f2(f1(m))).
+	// Here, we can do the same thing, except by default the `>>=` operator in C++ is
+	// right-associative. This means that the expression `monad >>= f1 >>= f2` gets interpreted as
+	// `monad >>= (f1 >>= f2)`. To get around this, we simply define the >>= operator on functions f1
+	// and f2 in a left-associative manner, i.e., (f1 >>= f2 >>= f3)(m) = f3(f2(f1))(m) =
+	// f3(f2(f1(m))). Luckily, the same problem doesn't happen with the `>>` operator (which is for
+	// some reason left-associative).
+	friend auto operator>>=(const M_function& f1, const M_function& f2) -> const M_function {
+		return [f1, f2](const M_default& m) { return m >> f1 >> f2; };
+	}
+
+	friend auto operator>>=(const M_function& f1, const M_function&& f2) -> const M_function {
+		return f1 >>= f2;
+	}
+
 	friend auto operator>>(const M_default& monad, const M_function& f) -> M_default {
 		if (!monad.has_value())
 			return monad;
@@ -95,20 +105,13 @@ public:
 		return *this >>= f;
 	}
 
-	friend auto operator>>=(const M_function& f1, const M_function& f2) -> const M_function {
-		return [f1, f2](const M_default& m) { return m >> f1 >> f2; };
-	}
-
-	friend auto operator>>=(const M_function& f1, const M_function&& f2) -> const M_function {
-		return f1 >>= f2;
-	}
-
 	////////////////////////////////////// Operator Overloads //////////////////////////////////////
 
+	// This works really nicely with `M_function`s
 	operator T() const {
 		return get_value();
 	}
-	
+
 	friend auto operator<<(std::ostream& os, const M_default& monad) -> std::ostream& {
 		if (monad.has_value())
 			os << monad.get_value();
