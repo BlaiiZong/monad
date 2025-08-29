@@ -1,0 +1,26 @@
+#include "monad.h"
+#include <iostream>
+using M = Monad<int, const char*>;
+
+// Don't know how to get it working with the commented out function notation
+// M add1(M& m) {
+//     return m.get_value() + 1;
+// }
+const std::function<M(const M&)> add1 = [](const M& m) { return m.get_value() + 1; };
+
+// M times3(M& m) {
+//     return m.get_value() * 3;
+// }
+const std::function<M(const M&)> times3 = [](const M& m) { return m.get_value() * 3; };
+
+// M div0(M& m) {
+//     return "division by zero error!";
+// }
+const std::function<M(const M&)> div0 = [](const M& m) { return "division by zero error!"; };
+
+int main() {
+	M my_monad = 1;
+	std::cout << (my_monad >> add1 >> times3 >> times3) << "\n";
+	my_monad >>= add1 >>= div0 >>= times3;
+	std::cout << my_monad << "\n";
+}
