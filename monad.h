@@ -14,12 +14,12 @@ class Monad {
 		Data(E error)
 		: error_(error) {}
 		~Data() {
-			delete value;
-			delete error;
+			value_.~T();
+			error_.~E();
 		}
 	};
 	using M_default = Monad<T, E>;
-	using M_function = std::function<M_default(const M_default&)>;
+	using M_function = std::function<M_default(const T&)>;
 
 public:
 	///////////////////////////////////////// Constructors /////////////////////////////////////////
