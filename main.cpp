@@ -16,11 +16,18 @@ const std::function<M(const int&)> times3 = [](const int& m) { return m * 3; };
 // M div0(M& m) {
 //     return "division by zero error!";
 // }
-const std::function<M(const int&)> div0 = [](const int& m) { return "division by zero error!"; };
+// const std::function<M(const int&)> div0 = [](const int& m) { return "division by zero error!"; };
 
 int main() {
 	M my_monad = 1;
 	std::cout << (my_monad >> add1 >> times3 >> times3) << "\n";
-	my_monad >>= add1 >>= div0 >>= times3;
+	// my_monad >>= add1 >>= div0 >>= times3;
 	std::cout << my_monad << "\n";
+
+	// This will return 0
+	// M default;
+	// std::cout << default.has_value();
+
+	// Monad<int, int> specialised = 1;
+	// std::cout << std::boolalpha << specialised.has_value();
 }

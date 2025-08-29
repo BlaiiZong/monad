@@ -3,36 +3,53 @@
 // Monad class storing a value of type T, or an error of type E
 template<typename T, typename E>
 class Monad {
+	static constexpr bool different_types = !std::is_same_v<T, E>;
 	union Data {
 		T value_;
 		E error_;
 
+		// Default constructor initialises Data as the error type
 		Data()
 		: error_(E{}) {}
 		Data(T value)
 		: value_(value) {}
-		Data(E error)
+
+		// Data(E error) : error_(error) {}
+		template <bool B = different_types>
+		Data(E);
+		template<>
+		Data<false>(E) = delete;
+		template<>
+		Data<true>(E error)
 		: error_(error) {}
+
 		~Data() {
 			value_.~T();
 			error_.~E();
 		}
 	};
 	using M_default = Monad<T, E>;
-	using M_function = std::function<M_default(const T&)>;
+	using M_function = std::function<M_default(const M_default&)>;
 
 public:
 	///////////////////////////////////////// Constructors /////////////////////////////////////////
 
-	Monad() = default;
+	// Monads are default constructed as the error type.
+	// This is to be consistent with std::optional.
+	Monad()
+	: has_value_(false) {}
 
-	Monad(T value)
+	Monad(T&& value)
 	: has_value_(true)
 	, data_(value) {}
 
-	Monad(E error)
-	: has_value_(false)
-	, data_(error) {}
+	template <bool B = different_types>
+	Monad(E&&);
+	// Deleted definition must be first declaration :o
+	template<>
+	Monad<false>(E&&) = delete;
+	template<>
+	Monad<true>(E&& error) : has_value_(false), data_(error) {}
 
 	// Copy constructor/assignment
 	Monad(const M_default& other)
@@ -62,6 +79,19 @@ public:
 	// TODO: decide what happens when the monad is in its error form
 	auto get_value() const -> const T& {
 		return data_.value_;
+	}
+
+	/////////////////////////////////////////// Modifiers //////////////////////////////////////////
+	// Unlikely ever needed, but may prove useful in the case of Monad<T, T>'s
+
+	auto set_value(T& value) -> void {
+		has_value_ = true;
+		data_.value_ = value;
+	}
+
+	auto set_error(E& error) -> void {
+		has_value_ = false;
+		data_.error_ = error;
 	}
 
 	///////////////////////////////////// Function Application /////////////////////////////////////
@@ -119,14 +149,7 @@ public:
 			os << monad.data_.error_;
 		return os;
 	}
-
-	// Arbitrary: Let's say that two monads are equal if they store the same value, or they are both
-	// errors - doesn't even have to be the same error type
-	template<typename E1, typename E2>
-	friend auto operator==(const Monad<T, E1>& lhs, const Monad<T, E2>& rhs) -> bool {
-		return (!lhs.has_value() && !rhs.has_value()) || lhs.get_value() == rhs.get_value();
-	}
-
+	
 	friend auto operator==(const M_default& monad, T value) -> bool {
 		return monad.has_value() && monad.get_value() == value;
 	}
@@ -139,3 +162,11 @@ private:
 	bool has_value_;
 	Data data_;
 };
+
+// Equality of Monads
+// Arbitrary: Let's say that two monads are equal if they store the same value, or they are both
+// errors - doesn't even have to be the same error type
+template<typename T, typename E1, typename E2>
+auto operator==(const Monad<T, E1>& lhs, const Monad<T, E2>& rhs) -> bool {
+	return (!lhs.has_value() && !rhs.has_value()) || lhs.get_value() == rhs.get_value();
+}
