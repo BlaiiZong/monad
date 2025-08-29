@@ -105,6 +105,10 @@ public:
 
 	////////////////////////////////////// Operator Overloads //////////////////////////////////////
 
+	operator T() const {
+		return get_value();
+	}
+	
 	friend auto operator<<(std::ostream& os, const M_default& monad) -> std::ostream& {
 		if (monad.has_value())
 			os << monad.get_value();

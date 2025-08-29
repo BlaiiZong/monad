@@ -6,12 +6,12 @@ using M = Monad<int, const char*>;
 // M add1(M& m) {
 //     return m.get_value() + 1;
 // }
-const std::function<M(const M&)> add1 = [](const M& m) { return m.get_value() + 1; };
+const std::function<M(const M&)> add1 = [](const M& m) { return 1 + m; };
 
 // M times3(M& m) {
 //     return m.get_value() * 3;
 // }
-const std::function<M(const M&)> times3 = [](const M& m) { return m.get_value() * 3; };
+const std::function<M(const M&)> times3 = [](const M& m) { return m * 3; };
 
 // M div0(M& m) {
 //     return "division by zero error!";
