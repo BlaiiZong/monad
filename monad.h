@@ -10,12 +10,13 @@ class Monad {
 		T value_;
 		E error_;
 
-		// Default constructor initialises Data as the error type
+		// Default constructor initialises Data as the error type (see Monad default constructor)
 		Data()
 		: error_(E{}) {}
 		Data(T value)
 		: value_(value) {}
 
+		// Only declared when T and E are diffent types
 		Data(E error)
 		   requires(different_types)
 		: error_(error) {}
@@ -42,6 +43,7 @@ public:
 	: has_value_(true)
 	, data_(value) {}
 
+	// Only declared when T and E are different types
 	Monad(E&& error)
 	   requires(different_types)
 	: has_value_(false)
@@ -73,12 +75,13 @@ public:
 	}
 
 	// TODO: decide what happens when the monad is in its error form
+	// For now, it is undefined behavour to call get_value when the monad is in its error form
 	auto get_value() const -> const T& {
 		return data_.value_;
 	}
 
 	/////////////////////////////////////////// Modifiers //////////////////////////////////////////
-	// Unlikely ever needed, but may prove useful in the case of Monad<T, T>'s
+	// Unlikely ever needed, but useful in the case of Monad<T, T>'s
 
 	auto set_value(T& value) -> void {
 		has_value_ = true;
@@ -146,11 +149,11 @@ public:
 		return os;
 	}
 
-	friend auto operator==(const M_default& monad, T value) -> bool {
+	friend auto operator==(const M_default& monad, const T& value) -> bool {
 		return monad.has_value() && monad.get_value() == value;
 	}
 
-	friend auto operator==(T value, const M_default& monad) -> bool {
+	friend auto operator==(const T& value, const M_default& monad) -> bool {
 		return monad == value;
 	}
 
