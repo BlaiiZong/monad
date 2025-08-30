@@ -1,8 +1,10 @@
 #include <iostream>
+#include <type_traits>
 
 // Monad class storing a value of type T, or an error of type E
 template<typename T, typename E>
 class Monad {
+	// Delete E constructor when we have a Monad<T, T>
 	static constexpr bool different_types = !std::is_same_v<T, E>;
 	union Data {
 		T value_;
@@ -14,21 +16,18 @@ class Monad {
 		Data(T value)
 		: value_(value) {}
 
-		// Data(E error) : error_(error) {}
-		template <bool B = different_types>
-		Data(E);
-		template<>
-		Data<false>(E) = delete;
-		template<>
-		Data<true>(E error)
+		Data(E error)
+		   requires(different_types)
 		: error_(error) {}
 
-		~Data() {
+		~Data() noexcept {
 			value_.~T();
 			error_.~E();
 		}
 	};
+
 	using M_default = Monad<T, E>;
+	// a std::function<M_default(const T&)> falls under this category
 	using M_function = std::function<M_default(const M_default&)>;
 
 public:
@@ -43,13 +42,10 @@ public:
 	: has_value_(true)
 	, data_(value) {}
 
-	template <bool B = different_types>
-	Monad(E&&);
-	// Deleted definition must be first declaration :o
-	template<>
-	Monad<false>(E&&) = delete;
-	template<>
-	Monad<true>(E&& error) : has_value_(false), data_(error) {}
+	Monad(E&& error)
+	   requires(different_types)
+	: has_value_(false)
+	, data_(error) {}
 
 	// Copy constructor/assignment
 	Monad(const M_default& other)
@@ -66,7 +62,7 @@ public:
 
 	// Move constructor/assignment
 	Monad(M_default&& other) noexcept = default;
-	auto operator=(M_default&& other) -> M_default& = default;
+	auto operator=(M_default&& other) noexcept -> M_default& = default;
 
 	~Monad() noexcept = default;
 
@@ -149,7 +145,7 @@ public:
 			os << monad.data_.error_;
 		return os;
 	}
-	
+
 	friend auto operator==(const M_default& monad, T value) -> bool {
 		return monad.has_value() && monad.get_value() == value;
 	}
